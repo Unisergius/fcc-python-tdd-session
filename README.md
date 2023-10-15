@@ -201,3 +201,178 @@ Now we need to think if we need to refactor our code, optimize it, improve struc
 #### NEXT ITERATION - 2nd Step Red
 
 Now we write another failing test. Should we write another test for an edge case to the function add_task? Should we go for the next function complete task?
+
+### Some functions that our task list program should have
+
+- add_task
+- complete_task
+- remove_task
+- wont_do_task
+
+### Mocking user input
+
+We can mock user input (or other types of external input) by using the unittest package already present in python3
+
+Mocking is a technique used in testing to replace a part of the system with a simulated version (a mock) that allows you to control its behavior during tests. Mocking is particularly useful when you want to isolate the code being tested from external dependencies, such as databases, APIs, or other services.
+
+Example for user input
+
+```py
+
+# my_module.py
+def get_user_input():
+    user_input = input("Enter something: ")
+    return f"You entered: {user_input}"
+
+```
+
+```py
+
+# test_my_module.py
+from unittest.mock import patch
+from my_module import get_user_input
+
+def test_get_user_input():
+    # Mock the built-in input function
+    with patch("builtins.input", return_value="Mocked Input"):
+        # Call the function being tested
+        result = get_user_input()
+
+    # Assertions
+    assert result == "You entered: Mocked Input"
+
+```
+
+Mocking a database input
+
+```py
+# my_module.py
+class Database:
+    def query(self, sql):
+        # Actual database query logic to select from my_table
+        pass
+
+def get_data_from_database():
+    db = Database()
+    result = db.query("SELECT * FROM my_table")
+    return result
+```
+
+```py
+
+# test_my_module.py
+from unittest.mock import patch
+from my_module import get_data_from_database
+
+def test_get_data_from_database():
+    # Mock the Database class and its query method
+    with patch("my_module.Database") as mock_database:
+        # Mock the return value of the query method
+        mock_database.return_value.query.return_value = {"id": 1, "name": "Example"}
+
+        # Call the function being tested
+        result = get_data_from_database()
+
+    # Assertions
+    assert result == {"id": 1, "name": "Example"}
+
+
+```
+
+Mocking HTTP requests
+
+```py
+
+# my_module.py
+import requests
+
+def fetch_data_from_api():
+    response = requests.get("https://api.example.com/data")
+    return response.json()
+
+```
+
+```py
+
+# test_my_module.py
+from unittest.mock import patch
+import pytest
+from my_module import fetch_data_from_api
+
+def test_fetch_data_from_api_successful_request():
+    # Mock the requests.get method
+    with patch("my_module.requests.get") as mock_get:
+        # Set the return value of the mock to simulate a successful response
+        mock_get.return_value.json.return_value = {"status": "success"}
+
+        # Call the function being tested
+        result = fetch_data_from_api()
+
+    # Assertions
+    assert result == {"status": "success"}
+
+def test_fetch_data_from_api_failed_request():
+    # Mock the requests.get method to simulate a failed response
+    with patch("my_module.requests.get") as mock_get:
+        # Set the side effect to raise an exception when called
+        mock_get.side_effect = requests.exceptions.RequestException("API Error")
+
+        # Call the function being tested, expecting an exception
+        with pytest.raises(requests.exceptions.RequestException, match="API Error"):
+            fetch_data_from_api()
+```
+
+PS: for requests you need to install the requests package
+
+```sh
+pip install pytest requests
+```
+
+### Dependency Injection to improve TDD experience
+
+What if the code we want to test directly depends on another class we did somewhere else?
+
+If you follow SOLID principles, a principle you're no strange to is Inversion of Control. IoC tells that instead of the application deciding what code to execute, it is the module or class itself in charge of what code to execute, normally through an injected class the code depends on.
+
+DI is a more specific pattern of IoC, which essentially translates into classes allowing to be constructed with the dependencies they need.
+
+Here's an example OrderProcessor has a constructor that allows you to setup a payment_gateway
+
+```py
+
+class OrderProcessor:
+    def __init__(self, payment_gateway):
+        self.payment_gateway = payment_gateway
+
+    def process_order(self, order):
+        # Business logic to process the order
+        result = self.payment_gateway.charge(order.total_amount)
+        return result
+```
+
+How does this help us in testing the OrderProcessor class?
+
+- We can make a mock of the class and inject it to OrderProcessor in order to test it without bothering the payment gateway we subcontracted.
+
+Because the dependency is injectable, mocking becomes easy.
+
+```py 
+
+class TestOrderProcessor:
+    def test_process_order_successful_payment(self):
+        # Create a mock payment gateway for testing
+        mock_payment_gateway = MockPaymentGateway()
+
+        # Inject the mock_payment_gateway into the OrderProcessor
+        order_processor = OrderProcessor(payment_gateway=mock_payment_gateway)
+
+        # Test the process_order method
+        result = order_processor.process_order(mock_order)
+
+        # Assertions and verifications
+        assert result == "Payment Successful"
+        mock_payment_gateway.charge.assert_called_once_with(mock_order.total_amount)
+
+
+```
+
