@@ -202,12 +202,11 @@ Now we need to think if we need to refactor our code, optimize it, improve struc
 
 Now we write another failing test. Should we write another test for an edge case to the function add_task? Should we go for the next function complete task?
 
-### Some functions that our task list program should have
+### Some functionality that our task list program should have
 
-- add_task
-- complete_task
-- remove_task
-- wont_do_task
+1. add a task
+2. complete a task
+3. remove task
 
 ### Mocking user input
 
@@ -356,7 +355,7 @@ How does this help us in testing the OrderProcessor class?
 
 Because the dependency is injectable, mocking becomes easy.
 
-```py 
+```py
 
 class TestOrderProcessor:
     def test_process_order_successful_payment(self):
@@ -376,3 +375,9 @@ class TestOrderProcessor:
 
 ```
 
+Some more tasks we can do in TDD:
+
+1. Mark task as wont do
+2. Check if task is past due date
+3. Get all tasks from a specific date.
+ 

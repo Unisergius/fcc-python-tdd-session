@@ -23,3 +23,18 @@ def test_complete_task():
 
     # Verify that the task has been marked as completed
     assert "Task 1 (completed)" in task_list.tasks
+
+
+def test_remove_task():
+    task_list = TaskList()
+    task_list.add_task("Task to be removed")
+
+    # Verify that the task is initially in the list
+    assert "Task to be removed" in task_list.tasks
+
+    # Remove the task
+    task_list.remove_task("Task to be removed")
+
+    # Verify that the task is no longer in the list
+    assert "Task to be removed" not in task_list.tasks
+
